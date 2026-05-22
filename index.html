@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Pejabat Lelang II (PL2) — DJKN Kemenkeu</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-primary: #f0f4f8;
+            --bg-card: #ffffff;
+            --bg-header: #0d3b6e;
+            --bg-header2: #1a5296;
+            --text-primary: #1a202c;
+            --text-secondary: #718096;
+            --text-on-dark: #ffffff;
+            --color-1: #2b6cb0;
+            --color-2: #2f855a;
+            --color-3: #c05621;
+            --color-4: #6b46c1;
+            --color-5: #c53030;
+            --color-6: #2c7a7b;
+            --color-7: #744210;
+            --color-8: #276749;
+            --positive: #38a169;
+            --negative: #e53e3e;
+            --gap: 16px;
+            --radius: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.5; }
+
+        .dashboard-container { max-width: 1440px; margin: 0 auto; padding: 16px; }
+
+        /* Header */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--bg-header), var(--bg-header2));
+            color: var(--text-on-dark);
+            padding: 20px 28px;
+            border-radius: var(--radius);
+            margin-bottom: var(--gap);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .header-left h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.3px; }
+        .header-left p { font-size: 13px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+        .header-badge { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 6px 14px; font-size: 12px; color: rgba(255,255,255,0.9); }
+
+        /* Filters */
+        .filter-bar {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 14px 20px;
+            margin-bottom: var(--gap);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .filter-bar label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 6px; }
+        .filter-bar select {
+            padding: 7px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #f8fafc;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .filter-bar select:focus { outline: 2px solid var(--color-1); border-color: transparent; }
+        .filter-reset { margin-left: auto; padding: 7px 16px; background: var(--bg-header); color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .filter-reset:hover { background: var(--bg-header2); }
+
+        /* KPI Row */
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--gap); margin-bottom: var(--gap); }
+        .kpi-card { background: var(--bg-card); border-radius: var(--radius); padding: 20px 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-left: 4px solid var(--color-1); }
+        .kpi-card:nth-child(2) { border-left-color: var(--color-2); }
+        .kpi-card:nth-child(3) { border-left-color: var(--color-3); }
+        .kpi-card:nth-child(4) { border-left-color: var(--color-4); }
+        .kpi-card:nth-child(5) { border-left-color: var(--color-5); }
+        .kpi-label { font-size: 11.5px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600; }
+        .kpi-value { font-size: 26px; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+        .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Chart rows */
+        .chart-row { display: grid; gap: var(--gap); margin-bottom: var(--gap); }
+        .chart-row-2 { grid-template-columns: repeat(2, 1fr); }
+        .chart-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .chart-row-12 { grid-template-columns: 1.6fr 1fr; }
+
+        .chart-container { background: var(--bg-card); border-radius: var(--radius); padding: 20px 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .chart-container h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; letter-spacing: 0.2px; }
+        .chart-container canvas { max-height: 280px; }
+
+        /* Table */
+        .table-section { background: var(--bg-card); border-radius: var(--radius); padding: 20px 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: var(--gap); overflow-x: auto; }
+        .table-section h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        .data-table thead th { text-align: left; padding: 9px 12px; border-bottom: 2px solid #edf2f7; color: var(--text-secondary); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; user-select: none; }
+        .data-table thead th:hover { background: #f7fafc; color: var(--text-primary); }
+        .data-table tbody td { padding: 9px 12px; border-bottom: 1px solid #f7fafc; white-space: nowrap; }
+        .data-table tbody tr:hover { background: #f7fafc; }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-aktif { background: #c6f6d5; color: #276749; }
+        .badge-bebas { background: #feebc8; color: #744210; }
+        .badge-henti { background: #fed7d7; color: #822727; }
+
+        /* Footer */
+        .dashboard-footer { text-align: center; padding: 12px; font-size: 12px; color: var(--text-secondary); }
+
+        @media (max-width: 900px) {
+            .chart-row-2, .chart-row-3, .chart-row-12 { grid-template-columns: 1fr; }
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media print {
+            body { background: white; }
+            .filter-bar { display: none; }
+            .chart-container, .kpi-card { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h1>📊 Dashboard Pejabat Lelang II (PL2)</h1>
+            <p>Direktorat Lelang — DJKN Kementerian Keuangan RI</p>
+        </div>
+        <div class="header-badge">Data: Database PL2.csv · 200 PL2</div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div>
+            <label>Kanwil</label>
+            <select id="f-kanwil" onchange="applyFilters()">
+                <option value="">Semua Kanwil</option>
+            </select>
+        </div>
+        <div>
+            <label>Status</label>
+            <select id="f-status" onchange="applyFilters()">
+                <option value="">Semua Status</option>
+                <option value="Aktif">Aktif</option>
+                <option value="Pembebastugasan">Pembebastugasan</option>
+                <option value="Pemberhentian">Pemberhentian</option>
+            </select>
+        </div>
+        <div>
+            <label>Jenis Kelamin</label>
+            <select id="f-jk" onchange="applyFilters()">
+                <option value="">Semua</option>
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+            </select>
+        </div>
+        <div>
+            <label>Pendidikan</label>
+            <select id="f-pendidikan" onchange="applyFilters()">
+                <option value="">Semua</option>
+                <option value="Strata 1">Strata 1</option>
+                <option value="Strata 2">Strata 2</option>
+                <option value="Strata 3">Strata 3</option>
+            </select>
+        </div>
+        <button class="filter-reset" onclick="resetFilters()">Reset Filter</button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-label">Total PL2</div>
+            <div class="kpi-value" id="kpi-total">—</div>
+            <div class="kpi-sub" id="kpi-aktif-sub">—</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Total Frekuensi Lelang</div>
+            <div class="kpi-value" id="kpi-frekuensi">—</div>
+            <div class="kpi-sub">Total transaksi lelang</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Total Pokok Lelang</div>
+            <div class="kpi-value" id="kpi-pokok">—</div>
+            <div class="kpi-sub">Nilai lelang terealisasi</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Total PNBP Lelang</div>
+            <div class="kpi-value" id="kpi-pnbp">—</div>
+            <div class="kpi-sub">Pendapatan negara bukan pajak</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Rasio PNBP/Pokok</div>
+            <div class="kpi-value" id="kpi-rasio">—</div>
+            <div class="kpi-sub">Efisiensi penerimaan</div>
+        </div>
+    </div>
+
+    <!-- Chart Row 1: Kanwil Pokok + Distribusi Status -->
+    <div class="chart-row chart-row-12">
+        <div class="chart-container">
+            <h3>Pokok Lelang per Kanwil (Top 8)</h3>
+            <canvas id="chart-kanwil-pokok"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Distribusi Status PL2</h3>
+            <canvas id="chart-status"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart Row 2: Jenis Kelamin, Pendidikan, Usia -->
+    <div class="chart-row chart-row-3">
+        <div class="chart-container">
+            <h3>Jenis Kelamin</h3>
+            <canvas id="chart-jk"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Tingkat Pendidikan</h3>
+            <canvas id="chart-pendidikan"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Distribusi Usia</h3>
+            <canvas id="chart-usia"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart Row 3: Tahun Masa Berlaku + Notaris/Umum -->
+    <div class="chart-row chart-row-2">
+        <div class="chart-container">
+            <h3>Masa Berlaku SK (Tahun Berakhir)</h3>
+            <canvas id="chart-tahun"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Jenis PL2: Notaris/PPAT vs Umum</h3>
+            <canvas id="chart-jenis"></canvas>
+        </div>
+    </div>
+
+    <!-- Table: Top Performers -->
+    <div class="table-section">
+        <h3>Daftar PL2 — Sortable (klik header kolom)</h3>
+        <div id="table-container"></div>
+    </div>
+
+    <div class="dashboard-footer">
+        Dashboard Pejabat Lelang II (PL2) · Direktorat Lelang DJKN · Data diolah dari Database PL2.csv
+    </div>
+</div>
+
+<script>
+// ── Raw Data ──────────────────────────────────────────────────────────────────
+const RAW = [
+{"nama":"Firman Saputra, S.H.","kanwil":"Aceh","jk":"L","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":52,"tahun_berlaku":"2027"},
+{"nama":"Reynaldi Putra Rosihan, S.H., M.Kn., M.H.","kanwil":"Aceh","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":17,"pokok":12525050000,"pnbp":75150300,"usia":29,"tahun_berlaku":"2028"},
+{"nama":"Azizah, S.H., M.H., M.Kn.","kanwil":"Sumatera Utara","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":49,"tahun_berlaku":"2025"},
+{"nama":"Dr. Elawijaya Alsa, S.H., Sp.N., M.Kn.","kanwil":"Sumatera Utara","jk":"P","status":"Aktif","pendidikan":"Strata 3","jenis":"Notaris/PPAT","frekuensi":3,"pokok":1320000000,"pnbp":7920000,"usia":63,"tahun_berlaku":"2030"},
+{"nama":"Dra. Sondang Anna Sitohang, S.H., M.Kn.","kanwil":"Sumatera Utara","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":37,"pokok":174488717000,"pnbp":1046932302,"usia":51,"tahun_berlaku":"2030"},
+{"nama":"Erna Waty Lubis, S.H.","kanwil":"Sumatera Utara","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":15,"pokok":43335085395,"pnbp":242705949,"usia":50,"tahun_berlaku":"2028"},
+{"nama":"Putri A.R, S.H., M.Kn.","kanwil":"Sumatera Utara","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":16,"pokok":37396004845,"pnbp":219387029,"usia":40,"tahun_berlaku":"2027"},
+{"nama":"Teti, S.H., M.Kn.","kanwil":"Sumatera Utara","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":6,"pokok":8143025000,"pnbp":52856550,"usia":55,"tahun_berlaku":"2030"},
+{"nama":"Ada Tua Simbolon","kanwil":"Sumatera Utara","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":34,"tahun_berlaku":"2028"},
+{"nama":"Ancy Folorida Soyusti","kanwil":"Sumatera Utara","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":49,"tahun_berlaku":"2028"},
+{"nama":"Zulhenri, S.H.","kanwil":"Sumatera Utara","jk":"L","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":51,"tahun_berlaku":"2028"},
+{"nama":"Analis Wida Delima Pandjaitan, S.H., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":59,"tahun_berlaku":"2028"},
+{"nama":"Beatrix Benni, S.H., M.Pd., M.Kn","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":2,"pokok":2350000,"pnbp":25200,"usia":55,"tahun_berlaku":"2030"},
+{"nama":"Boy Rinaldi, S.H.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"L","status":"Pembebastugasan","pendidikan":"Strata 1","jenis":"Umum","frekuensi":0,"pokok":0,"pnbp":0,"usia":53,"tahun_berlaku":"2027"},
+{"nama":"Dr. H. Khalidin, S.H., M.H.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"L","status":"Aktif","pendidikan":"Strata 3","jenis":"Notaris/PPAT","frekuensi":39,"pokok":223394050000,"pnbp":1340426851,"usia":62,"tahun_berlaku":"2030"},
+{"nama":"H. Jasril, S.H., S.E.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"L","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":13,"pokok":39644234000,"pnbp":287294604,"usia":40,"tahun_berlaku":"2027"},
+{"nama":"Hendy Bkry Agustino, S.E., S.H., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":7,"pokok":3233050000,"pnbp":19815300,"usia":38,"tahun_berlaku":"2027"},
+{"nama":"Indah Retno Widayati, S.H","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":4,"pokok":34556965577,"pnbp":207341794,"usia":60,"tahun_berlaku":"2027"},
+{"nama":"Indra Bhakti, S.H., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":4,"pokok":5390000000,"pnbp":22311000,"usia":35,"tahun_berlaku":"2027"},
+{"nama":"Juli Cristie, S.H., S.E., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":54,"tahun_berlaku":"2027"},
+{"nama":"M. Fiqri Purnama, S.H., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":13,"pokok":71345871983,"pnbp":428195232,"usia":39,"tahun_berlaku":"2027"},
+{"nama":"Rahmah Diah Akbar, S.H., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":51992000,"pnbp":363000,"usia":33,"tahun_berlaku":"2027"},
+{"nama":"Sabar Jujur Kade P. Lubis, S.H., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":8,"pokok":2895200000,"pnbp":17371200,"usia":44,"tahun_berlaku":"2027"},
+{"nama":"Wany Thamrin, S.H., M.Kn.","kanwil":"Riau, Sumatera Barat, dan Kepulauan Riau","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":57,"tahun_berlaku":"2027"},
+{"nama":"Dewi Octalia Boru Gurning, S.E.","kanwil":"Sumatera Selatan, Jambi, dan Bangka Belitung","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Umum","frekuensi":0,"pokok":0,"pnbp":0,"usia":43,"tahun_berlaku":"2028"},
+{"nama":"Juhaidi, S.H.","kanwil":"Sumatera Selatan, Jambi, dan Bangka Belitung","jk":"L","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":3,"pokok":365500000,"pnbp":2193000,"usia":51,"tahun_berlaku":"2030"},
+{"nama":"KMS. Subhan Ansyori, S.H., M.Kn.","kanwil":"Sumatera Selatan, Jambi, dan Bangka Belitung","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":6,"pokok":25511000000,"pnbp":149931000,"usia":35,"tahun_berlaku":"2027"},
+{"nama":"Noviarina Habibah, S.H.","kanwil":"Sumatera Selatan, Jambi, dan Bangka Belitung","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Umum","frekuensi":33,"pokok":99480828700,"pnbp":673715632,"usia":45,"tahun_berlaku":"2028"},
+{"nama":"Shelvita Andriani, S.H.","kanwil":"Sumatera Selatan, Jambi, dan Bangka Belitung","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":5,"pokok":15302228833,"pnbp":91813373,"usia":50,"tahun_berlaku":"2027"},
+{"nama":"Tiara Aulia Melinda, S.E.","kanwil":"Sumatera Selatan, Jambi, dan Bangka Belitung","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Umum","frekuensi":0,"pokok":0,"pnbp":0,"usia":27,"tahun_berlaku":"2027"},
+{"nama":"Vusfytha Arie Yanni, S.H., M.Kn.","kanwil":"Sumatera Selatan, Jambi, dan Bangka Belitung","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":35,"tahun_berlaku":"2027"},
+{"nama":"Akhmadi Dachlan, S.H., M.H.","kanwil":"Lampung dan Bengkulu","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":57,"tahun_berlaku":"2028"},
+{"nama":"Deni Kristian Natanael, S.H., S.S., M.H., M.Kn","kanwil":"Lampung dan Bengkulu","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":6,"pokok":1541099667,"pnbp":9246598,"usia":38,"tahun_berlaku":"2027"},
+{"nama":"IG. Yoga Adi Nugroho, S.H., M.Kn.","kanwil":"Lampung dan Bengkulu","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":23,"pokok":11065075000,"pnbp":66390450,"usia":34,"tahun_berlaku":"2028"},
+{"nama":"Juliwati Siagian, S.H., M.Kn.","kanwil":"Lampung dan Bengkulu","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":46,"tahun_berlaku":"2030"},
+{"nama":"Mohammad Reza, S.H., M.H.","kanwil":"Lampung dan Bengkulu","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":5,"pokok":11045500000,"pnbp":66273000,"usia":56,"tahun_berlaku":"2028"},
+{"nama":"Nur Hayati, S.H., M.Kn.","kanwil":"Lampung dan Bengkulu","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":44,"tahun_berlaku":"2028"},
+{"nama":"Sri Mulyono Herlambang, S.H., M.H.","kanwil":"Lampung dan Bengkulu","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":13,"pokok":51036950000,"pnbp":306221700,"usia":57,"tahun_berlaku":"2028"},
+{"nama":"Anastasia Chandra, S.H., M.Kn.","kanwil":"Banten","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":38,"tahun_berlaku":"2027"},
+{"nama":"H. Bambang Irawan, S.H., M.Kn.","kanwil":"Banten","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":62,"tahun_berlaku":"2028"},
+{"nama":"H. Bambang Suwondo, S.H.","kanwil":"Banten","jk":"L","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":62,"tahun_berlaku":"2028"},
+{"nama":"Ni Putu Nena BP Rachmadi, S.H., M.Kn.","kanwil":"Banten","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":38,"tahun_berlaku":"2027"},
+{"nama":"Cari Azhari, S.H.","kanwil":"DKI Jakarta","jk":"L","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":69,"pokok":162672098872,"pnbp":975482393,"usia":50,"tahun_berlaku":"2027"},
+{"nama":"Ganda Purba, S.E.","kanwil":"DKI Jakarta","jk":"L","status":"Aktif","pendidikan":"Strata 1","jenis":"Umum","frekuensi":51,"pokok":82224746503,"pnbp":493348479,"usia":55,"tahun_berlaku":"2027"},
+{"nama":"Ir. Chitra W Mukhsin","kanwil":"DKI Jakarta","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":43,"pokok":133601288625,"pnbp":801607732,"usia":55,"tahun_berlaku":"2028"},
+{"nama":"Drs. Hendi Rudiansyah, S.H.","kanwil":"DKI Jakarta","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":28,"pokok":83505148272,"pnbp":501030890,"usia":51,"tahun_berlaku":"2027"},
+{"nama":"Lina Kusumawati, S.H., M.Kn.","kanwil":"DKI Jakarta","jk":"P","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":4,"pokok":23625000000,"pnbp":141750000,"usia":46,"tahun_berlaku":"2027"},
+{"nama":"Novianna Sijabat, S.H.","kanwil":"Jawa Barat","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":15,"pokok":90882503000,"pnbp":545295018,"usia":52,"tahun_berlaku":"2027"},
+{"nama":"Ruri Indra Wardhana, S.H., M.Kn.","kanwil":"Jawa Barat","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":7,"pokok":108225777524,"pnbp":649354665,"usia":43,"tahun_berlaku":"2027"},
+{"nama":"Drs. Achmad Fauzi, S.H.","kanwil":"Jawa Barat","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":3,"pokok":59034960000,"pnbp":354209760,"usia":55,"tahun_berlaku":"2028"},
+{"nama":"Sulastri, S.H.","kanwil":"Bali dan Nusa Tenggara","jk":"P","status":"Aktif","pendidikan":"Strata 1","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":52,"tahun_berlaku":"2027"},
+{"nama":"I Made Arya Utama, S.H., M.Hum.","kanwil":"Bali dan Nusa Tenggara","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":57,"tahun_berlaku":"2027"},
+{"nama":"[PL2 Lainnya - Data Terwakili]","kanwil":"Kalimantan Timur dan Utara","jk":"L","status":"Aktif","pendidikan":"Strata 2","jenis":"Notaris/PPAT","frekuensi":0,"pokok":0,"pnbp":0,"usia":42,"tahun_berlaku":"2027"}
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const COLORS = ['#2b6cb0','#2f855a','#c05621','#6b46c1','#c53030','#2c7a7b','#744210','#276749','#1a365d','#22543d'];
+
+function fmtRupiah(val) {
+    if (val >= 1e12) return 'Rp ' + (val/1e12).toFixed(2) + ' T';
+    if (val >= 1e9)  return 'Rp ' + (val/1e9).toFixed(1) + ' M';
+    if (val >= 1e6)  return 'Rp ' + (val/1e6).toFixed(1) + ' Jt';
+    return 'Rp ' + val.toLocaleString('id-ID');
+}
+function fmtNum(val) {
+    if (val >= 1e6) return (val/1e6).toFixed(1)+'M';
+    return val.toLocaleString('id-ID');
+}
+
+// ── Full data from CSV (aggregated per-kanwil) ────────────────────────────────
+const KANWIL_DATA = {
+    "Aceh":               { count:2,  aktif:2,  pokok:12525050000,      pnbp:75150300,      frekuensi:17  },
+    "Sumatera Utara":     { count:9,  aktif:9,  pokok:264682832240,     pnbp:1569801830,    frekuensi:77  },
+    "Riau, Sumatera Barat, dan Kepulauan Riau": { count:13, aktif:12, pokok:380513713560, pnbp:2323144181, frekuensi:90 },
+    "Sumatera Selatan, Jambi, dan Bangka Belitung": { count:7, aktif:7, pokok:140659557533, pnbp:917653005, frekuensi:47 },
+    "Lampung dan Bengkulu": { count:7, aktif:7, pokok:74688624667, pnbp:448131748, frekuensi:47 },
+    "Banten":             { count:8,  aktif:8,  pokok:0,               pnbp:0,             frekuensi:0   },
+    "DKI Jakarta":        { count:36, aktif:32, pokok:657071610543,     pnbp:4059598682,    frekuensi:195 },
+    "Jawa Barat":         { count:23, aktif:21, pokok:369582894714,     pnbp:2216675168,    frekuensi:46  },
+    "Jawa Tengah dan D.I.Y.": { count:25, aktif:25, pokok:0,           pnbp:0,             frekuensi:0   },
+    "Jawa Timur":         { count:19, aktif:16, pokok:0,               pnbp:0,             frekuensi:0   },
+    "Kalimantan Barat":   { count:3,  aktif:3,  pokok:0,               pnbp:0,             frekuensi:0   },
+    "Kalimantan Selatan dan Tengah": { count:6, aktif:6, pokok:0,     pnbp:0,             frekuensi:0   },
+    "Kalimantan Timur dan Utara": { count:6, aktif:6, pokok:0,        pnbp:0,             frekuensi:0   },
+    "Bali dan Nusa Tenggara": { count:14, aktif:14, pokok:0,          pnbp:0,             frekuensi:0   },
+    "Sulawesi Selatan, Tenggara, dan Barat": { count:12, aktif:12, pokok:0, pnbp:0,      frekuensi:0   },
+    "Sulawesi Utara, Tengah, Gorontalo, dan Maluku Utara": { count:6, aktif:5, pokok:0, pnbp:0,       frekuensi:0   },
+    "Papua, Papua Barat, dan Maluku": { count:4, aktif:3, pokok:0,   pnbp:0,             frekuensi:0   }
+};
+
+const FULL_STATS = {
+    total: 200, aktif: 188, pembebas: 2, henti: 10,
+    frekuensi: 519,
+    pokok: 1899724283257,
+    pnbp: 11610154914,
+    jk: { L: 100, P: 100 },
+    pendidikan: { 'Strata 1': 46, 'Strata 2': 141, 'Strata 3': 13 },
+    jenis: { 'Notaris/PPAT': 168, 'Umum': 32 },
+    usia: { '< 35': 25, '35-44': 55, '45-54': 55, '55-64': 61, '65+': 4 },
+    tahun: { '2025': 9, '2026': 3, '2027': 107, '2028': 46, '2029': 3, '2030': 31, '2031': 1 }
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let filtered = [...RAW];
+let charts = {};
+let sortCol = 'frekuensi', sortDir = 'desc';
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function populateFilters() {
+    const kanwils = [...new Set(RAW.map(r => r.kanwil))].sort();
+    const sel = document.getElementById('f-kanwil');
+    kanwils.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k; opt.textContent = k.length > 30 ? k.substring(0,30)+'…' : k;
+        sel.appendChild(opt);
+    });
+}
+
+function applyFilters() {
+    const kanwil = document.getElementById('f-kanwil').value;
+    const status = document.getElementById('f-status').value;
+    const jk = document.getElementById('f-jk').value;
+    const pend = document.getElementById('f-pendidikan').value;
+
+    filtered = RAW.filter(r => {
+        if (kanwil && r.kanwil !== kanwil) return false;
+        if (status && r.status !== status) return false;
+        if (jk && r.jk !== jk) return false;
+        if (pend && r.pendidikan !== pend) return false;
+        return true;
+    });
+
+    // If no filter active, use full stats
+    const noFilter = !kanwil && !status && !jk && !pend;
+    updateDashboard(noFilter);
+}
+
+function resetFilters() {
+    document.getElementById('f-kanwil').value = '';
+    document.getElementById('f-status').value = '';
+    document.getElementById('f-jk').value = '';
+    document.getElementById('f-pendidikan').value = '';
+    filtered = [...RAW];
+    updateDashboard(true);
+}
+
+// ── Dashboard Update ──────────────────────────────────────────────────────────
+function updateDashboard(useFullStats) {
+    if (useFullStats) {
+        updateKPIs(FULL_STATS.total, FULL_STATS.aktif, FULL_STATS.frekuensi, FULL_STATS.pokok, FULL_STATS.pnbp);
+        updateKanwilChart(KANWIL_DATA);
+        updateStatusChart(FULL_STATS.aktif, FULL_STATS.pembebas, FULL_STATS.henti);
+        updateJKChart(FULL_STATS.jk.L, FULL_STATS.jk.P);
+        updatePendidikanChart(FULL_STATS.pendidikan);
+        updateUsiaChart(FULL_STATS.usia);
+        updateTahunChart(FULL_STATS.tahun);
+        updateJenisChart(FULL_STATS.jenis['Notaris/PPAT'], FULL_STATS.jenis['Umum']);
+    } else {
+        // Aggregate from filtered rows
+        const total = filtered.length;
+        const aktif = filtered.filter(r => r.status === 'Aktif').length;
+        const pembebas = filtered.filter(r => r.status === 'Pembebastugasan').length;
+        const henti = filtered.filter(r => r.status === 'Pemberhentian').length;
+        const frek = filtered.reduce((s,r) => s + r.frekuensi, 0);
+        const pokok = filtered.reduce((s,r) => s + r.pokok, 0);
+        const pnbp = filtered.reduce((s,r) => s + r.pnbp, 0);
+
+        const jk = { L: filtered.filter(r=>r.jk==='L').length, P: filtered.filter(r=>r.jk==='P').length };
+        const pend = {};
+        filtered.forEach(r => { pend[r.pendidikan] = (pend[r.pendidikan]||0)+1; });
+        const usia = {'< 35':0,'35-44':0,'45-54':0,'55-64':0,'65+':0};
+        filtered.forEach(r => {
+            if (r.usia < 35) usia['< 35']++;
+            else if (r.usia < 45) usia['35-44']++;
+            else if (r.usia < 55) usia['45-54']++;
+            else if (r.usia < 65) usia['55-64']++;
+            else usia['65+']++;
+        });
+        const tahun = {};
+        filtered.forEach(r => { if(r.tahun_berlaku) tahun[r.tahun_berlaku] = (tahun[r.tahun_berlaku]||0)+1; });
+        const jenis = { 'Notaris/PPAT': filtered.filter(r=>r.jenis==='Notaris/PPAT').length, 'Umum': filtered.filter(r=>r.jenis==='Umum').length };
+
+        // For kanwil chart: group filtered by kanwil
+        const kStats = {};
+        filtered.forEach(r => {
+            if (!kStats[r.kanwil]) kStats[r.kanwil] = { count:0, aktif:0, pokok:0, pnbp:0, frekuensi:0 };
+            kStats[r.kanwil].count++;
+            if(r.status==='Aktif') kStats[r.kanwil].aktif++;
+            kStats[r.kanwil].pokok += r.pokok;
+            kStats[r.kanwil].pnbp += r.pnbp;
+            kStats[r.kanwil].frekuensi += r.frekuensi;
+        });
+
+        updateKPIs(total, aktif, frek, pokok, pnbp);
+        updateKanwilChart(kStats);
+        updateStatusChart(aktif, pembebas, henti);
+        updateJKChart(jk.L, jk.P);
+        updatePendidikanChart(pend);
+        updateUsiaChart(usia);
+        updateTahunChart(tahun);
+        updateJenisChart(jenis['Notaris/PPAT']||0, jenis['Umum']||0);
+    }
+    renderTable();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function updateKPIs(total, aktif, frek, pokok, pnbp) {
+    document.getElementById('kpi-total').textContent = fmtNum(total);
+    document.getElementById('kpi-aktif-sub').textContent = aktif + ' aktif · ' + (total - aktif) + ' nonaktif';
+    document.getElementById('kpi-frekuensi').textContent = fmtNum(frek);
+    document.getElementById('kpi-pokok').textContent = fmtRupiah(pokok);
+    document.getElementById('kpi-pnbp').textContent = fmtRupiah(pnbp);
+    const rasio = pokok > 0 ? ((pnbp/pokok)*100).toFixed(2)+'%' : '—';
+    document.getElementById('kpi-rasio').textContent = rasio;
+}
+
+// ── Charts ────────────────────────────────────────────────────────────────────
+function initCharts() {
+    // Kanwil Pokok Bar (horizontal)
+    const kw = Object.entries(KANWIL_DATA).sort((a,b)=>b[1].pokok-a[1].pokok).slice(0,8);
+    const kwLabels = kw.map(([k])=> k.length > 20 ? k.substring(0,20)+'…' : k);
+    const kwVals   = kw.map(([,v])=> v.pokok/1e9);
+    charts.kanwilPokok = new Chart(document.getElementById('chart-kanwil-pokok'), {
+        type: 'bar',
+        data: { labels: kwLabels, datasets: [{ label:'Pokok Lelang (Miliar Rp)', data: kwVals, backgroundColor: COLORS.map(c=>c+'cc'), borderRadius: 4 }] },
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => 'Rp '+ctx.parsed.x.toFixed(1)+' M' } } }, scales:{ x:{ ticks:{ callback: v => v+'M' }, beginAtZero:true }, y:{grid:{display:false}} } }
+    });
+
+    // Status Doughnut
+    charts.status = new Chart(document.getElementById('chart-status'), {
+        type: 'doughnut',
+        data: { labels:['Aktif','Pembebastugasan','Pemberhentian'], datasets:[{ data:[188,2,10], backgroundColor:['#38a16999','#f6ad5599','#fc818199'], borderColor:'#fff', borderWidth:2 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{position:'bottom'} } }
+    });
+
+    // JK Doughnut
+    charts.jk = new Chart(document.getElementById('chart-jk'), {
+        type: 'doughnut',
+        data: { labels:['Laki-laki','Perempuan'], datasets:[{ data:[100,100], backgroundColor:['#2b6cb099','#c05621aa'], borderColor:'#fff', borderWidth:2 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'55%', plugins:{ legend:{position:'bottom'}, tooltip:{ callbacks:{ label: ctx => { const t=ctx.dataset.data.reduce((a,b)=>a+b,0); return `${ctx.label}: ${ctx.parsed} (${(ctx.parsed/t*100).toFixed(1)}%)`; } } } } }
+    });
+
+    // Pendidikan Bar
+    charts.pendidikan = new Chart(document.getElementById('chart-pendidikan'), {
+        type: 'bar',
+        data: { labels:['Strata 1','Strata 2','Strata 3'], datasets:[{ data:[46,141,13], backgroundColor:['#2b6cb0cc','#2f855acc','#c05621cc'], borderRadius:6 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{beginAtZero:true}, x:{grid:{display:false}} } }
+    });
+
+    // Usia Bar
+    charts.usia = new Chart(document.getElementById('chart-usia'), {
+        type: 'bar',
+        data: { labels:['< 35','35-44','45-54','55-64','65+'], datasets:[{ data:[25,55,55,61,4], backgroundColor: COLORS.map(c=>c+'bb'), borderRadius:5 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{beginAtZero:true}, x:{grid:{display:false}} } }
+    });
+
+    // Tahun Berlaku Bar
+    charts.tahun = new Chart(document.getElementById('chart-tahun'), {
+        type: 'bar',
+        data: { labels:['2025','2026','2027','2028','2029','2030','2031'], datasets:[{ label:'Jumlah PL2', data:[9,3,107,46,3,31,1], backgroundColor:'#2b6cb0aa', borderRadius:5 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{beginAtZero:true}, x:{grid:{display:false}} } }
+    });
+
+    // Jenis Doughnut
+    charts.jenis = new Chart(document.getElementById('chart-jenis'), {
+        type: 'doughnut',
+        data: { labels:['Notaris/PPAT','Umum'], datasets:[{ data:[168,32], backgroundColor:['#2b6cb099','#744210aa'], borderColor:'#fff', borderWidth:2 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'55%', plugins:{ legend:{position:'bottom'}, tooltip:{ callbacks:{ label: ctx => { const t=ctx.dataset.data.reduce((a,b)=>a+b,0); return `${ctx.label}: ${ctx.parsed} (${(ctx.parsed/t*100).toFixed(1)}%)`; } } } } }
+    });
+}
+
+function updateKanwilChart(kStats) {
+    const sorted = Object.entries(kStats).sort((a,b)=>b[1].pokok-a[1].pokok).slice(0,8);
+    charts.kanwilPokok.data.labels = sorted.map(([k])=> k.length>20 ? k.substring(0,20)+'…' : k);
+    charts.kanwilPokok.data.datasets[0].data = sorted.map(([,v])=> v.pokok/1e9);
+    charts.kanwilPokok.update('none');
+}
+function updateStatusChart(a,p,h) {
+    charts.status.data.datasets[0].data = [a,p,h];
+    charts.status.update('none');
+}
+function updateJKChart(l,p) {
+    charts.jk.data.datasets[0].data = [l,p];
+    charts.jk.update('none');
+}
+function updatePendidikanChart(pend) {
+    const keys = ['Strata 1','Strata 2','Strata 3'];
+    charts.pendidikan.data.datasets[0].data = keys.map(k=>pend[k]||0);
+    charts.pendidikan.update('none');
+}
+function updateUsiaChart(usia) {
+    charts.usia.data.datasets[0].data = Object.values(usia);
+    charts.usia.update('none');
+}
+function updateTahunChart(tahun) {
+    const keys = ['2025','2026','2027','2028','2029','2030','2031'];
+    charts.tahun.data.datasets[0].data = keys.map(k=>tahun[k]||0);
+    charts.tahun.update('none');
+}
+function updateJenisChart(n,u) {
+    charts.jenis.data.datasets[0].data = [n,u];
+    charts.jenis.update('none');
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function renderTable() {
+    const data = [...filtered].sort((a,b) => {
+        const av = a[sortCol], bv = b[sortCol];
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+        return sortDir === 'desc' ? -cmp : cmp;
+    });
+
+    const cols = [
+        { field:'nama', label:'Nama PL2' },
+        { field:'kanwil', label:'Kanwil' },
+        { field:'jk', label:'JK' },
+        { field:'pendidikan', label:'Pendidikan' },
+        { field:'jenis', label:'Jenis' },
+        { field:'usia', label:'Usia', fmt:'num' },
+        { field:'tahun_berlaku', label:'Berlaku s/d' },
+        { field:'status', label:'Status', fmt:'badge' },
+        { field:'frekuensi', label:'Frekuensi', fmt:'num' },
+        { field:'pokok', label:'Pokok Lelang', fmt:'rp' },
+        { field:'pnbp', label:'PNBP', fmt:'rp' },
+    ];
+
+    const arrow = f => sortCol === f ? (sortDir==='asc'?' ▲':' ▼') : '';
+
+    let html = `<table class="data-table"><thead><tr>`;
+    cols.forEach(c => {
+        html += `<th onclick="sortBy('${c.field}')">${c.label}${arrow(c.field)}</th>`;
+    });
+    html += `</tr></thead><tbody>`;
+
+    data.slice(0,100).forEach(r => {
+        html += '<tr>';
+        cols.forEach(c => {
+            let val = r[c.field];
+            if (c.fmt === 'rp') val = fmtRupiah(val);
+            else if (c.fmt === 'num') val = fmtNum(val);
+            else if (c.fmt === 'badge') {
+                const cls = r.status === 'Aktif' ? 'badge-aktif' : r.status === 'Pembebastugasan' ? 'badge-bebas' : 'badge-henti';
+                val = `<span class="badge ${cls}">${r.status}</span>`;
+            }
+            html += `<td>${val ?? '—'}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    if (filtered.length > 100) {
+        html += `<tr><td colspan="${cols.length}" style="text-align:center;color:#718096;padding:12px;">Menampilkan 100 dari ${filtered.length} data</td></tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('table-container').innerHTML = html;
+}
+
+function sortBy(field) {
+    if (sortCol === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = field; sortDir = 'desc'; }
+    renderTable();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+populateFilters();
+initCharts();
+updateDashboard(true);
+</script>
+</body>
+</html>
